@@ -4,6 +4,8 @@ import tensorflow as tf
 import numpy as np
 from tflearn.datasets import mnist
 import logging
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 logging.basicConfig(format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
                     level=logging.DEBUG)
 
@@ -29,7 +31,7 @@ total_samples=len(X)        #样本大小
 logging.info('total_samples = {}'.format(total_samples))
 
 
-# 生成模型Generater
+# 构建生成器和判别器
 def generator(x,reuse=False):
     with tf.variable_scope('Generater',reuse=reuse):
         x = tflearn.fully_connected(x, 256,       activation='relu')
@@ -69,7 +71,7 @@ disc_model = tflearn.regression(disc_real,  placeholder=None, optimizer='adam',
                                 name='target_disc', op_name='DISC')
 
 # 训练
-gen = tflearn.DNN(gen_model, checkpoint_path='./model/gan/model_gan', tensorboard_dir='./logs')
+gen = tflearn.DNN(gen_model, checkpoint_path='./model/checkpoint/', tensorboard_dir='./logs/')
 
 # 生成模型传入的是噪音，那么我们就需要构建一个噪音数据
 z = np.random.uniform(-1., 1., size = [total_samples, z_dim])
@@ -79,12 +81,26 @@ gen.fit(X_inputs={gen_input: z, disc_input: X}, Y_targets=None, n_epoch=100, run
 
 # 可视化模型训练效果
 import matplotlib.pyplot as plt
-f, axis = plt.subplots(10, 2, figsize=(10, 4))
+# f, axis = plt.subplots(10, 2, figsize=(10, 4))
+#
+# for i in range(10):
+#     for j in range(2):
+#         z = np.random.uniform(-1., 1., size=[1, z_dim])
+#         temp=  [[a,a,a]            for a    in list(gen.predict([z])[0])]
+#         # temp = [[temp, temp, temp] for temp in list(gan.predict([z])[0])]
+#         axis[i][j].imshow(np.reshape(temp, (28,28,3)))
+# f.show()
+# plt.draw()
+
+
+f, a = plt.subplots(2,10,figsize=(10,4))
 for i in range(10):
     for j in range(2):
-        z = np.random.uniform(-1., 1., size=[1, z_dim])
-        temp=  [[a,a,a]            for a    in list(gen.predict([z])[0])]
-        # temp = [[temp, temp, temp] for temp in list(gan.predict([z])[0])]
-        axis[i][j].imshow(np.reshape(temp, (28,28,3)))
+        #Noise input
+        z = np.random.uniform(-1.,1.,size=[1,z_dim])
+        #Generate image from noise. Extend to 3 channels for matplot figure.
+        temp = [[temp,temp,temp] for temp in list(gen.predict([z])[0])]
+        print(temp)
+        a[j][i].imshow(np.reshape(temp,(28,28,3)))
 f.show()
-plt.draw()
+plt.show()
